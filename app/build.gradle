@@ -1,0 +1,77 @@
+apply plugin: 'com.android.application'
+
+def getVersionCode = { ->
+    try {
+        def code = new ByteArrayOutputStream()
+        exec {
+            commandLine 'git', 'rev-list', '--first-parent', '--count', 'master'
+            standardOutput = code
+        }
+        return code.toString().split("\n").size()
+    }
+    catch (ignored) {
+        return -1;
+    }
+}
+
+def getVersionName = { ->
+    try {
+        def stdout = new ByteArrayOutputStream()
+        exec {
+            commandLine 'git', 'describe', '--tags', '--dirty'
+            standardOutput = stdout
+        }
+        return stdout.toString().trim()
+    }
+    catch (ignored) {
+        return null;
+    }
+}
+
+android {
+    compileSdkVersion 22
+    buildToolsVersion '22.0.1'
+
+    defaultConfig {
+        minSdkVersion 14
+        targetSdkVersion 22
+        versionCode getVersionCode()
+        versionName getVersionName()
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    productFlavors {
+        def BASE_ENDPOINT = "CLUB_FEED"
+
+        dev {
+            applicationId "com.globallogic.rss_reader.dev"
+            buildConfigField "String", BASE_ENDPOINT, '"http://club.globallogic.com.ar/feed/"'
+        }
+
+        qa {
+            applicationId "com.globallogic.rss_reader.qa"
+            buildConfigField "String", BASE_ENDPOINT, '"http://club.globallogic.com.ar/feed/"'
+        }
+
+        prod {
+            applicationId "com.globallogic.rss_reader"
+            buildConfigField "String", BASE_ENDPOINT, '"http://club.globallogic.com.ar/feed/"'
+        }
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile 'com.android.support:appcompat-v7:22.1.1'
+    compile 'com.android.support:recyclerview-v7:22.0.0'
+    compile 'com.koushikdutta.ion:ion:2.+'
+    compile('org.simpleframework:simple-xml:2.7.+') {
+        exclude module: 'stax'
+        exclude module: 'stax-api'
+        exclude module: 'xpp3'
+    }
+}
